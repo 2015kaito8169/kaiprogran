@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>kaiprogran Official IDE</title>
+    <style>
+        body { font-family: 'Consolas', monospace; background: #0f111a; color: #fff; margin: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        h1 { color: #82aaff; border-bottom: 2px solid #82aaff; }
+        textarea { width: 100%; height: 350px; background: #1a1c25; color: #a6accd; border: 1px solid #3b3f51; padding: 15px; font-size: 16px; border-radius: 8px; box-sizing: border-box; outline: none; }
+        .controls { margin: 15px 0; display: flex; gap: 10px; }
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; }
+        #runBtn { background: #c3e88d; color: #000; }
+        #log { background: #000; padding: 15px; height: 180px; overflow-y: auto; border: 1px solid #3b3f51; border-radius: 8px; margin-bottom: 10px; white-space: pre-wrap; }
+        #canvas { background: white; height: 300px; position: relative; overflow: hidden; border-radius: 8px; border: 1px solid #444; }
+        .log-normal { color: #80cbc4; }
+        .log-warn { color: #ffcb6b; } /* cav用: 黄色 */
+        .log-error { color: #f07178; } /* ere用: 赤色 */
+        .kaipro-img { position: absolute; transition: all 0.5s ease; max-width: 80px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>kaiprogran IDE</h1>
+    <textarea id="editor" spellcheck="false" placeholder="コードを入力...">++StartScript++
+++endscript++
+
+com// ここにプログラムを書いてください
+表示 = "こんにちは"
+disp(表示)
+cav("これは警告です")
+ere("これはエラーです")
+
+com// 意味不明な命令のテスト
+unknown_cmd("test")</textarea>
+
+    <div class="controls">
+        <button id="runBtn" onclick="runKaiPro()">▶ 実行 (RUN)</button>
+        <button style="background:#82aaff;" onclick="saveData()">保存</button>
+        <button style="background:#c792ea;" onclick="loadData()">読込</button>
+    </div>
+
+    <div id="log"></div>
+    <div id="canvas"></div>
+</div>
+
+<script>
+    let variables = {};
+    let lists = {};
+    let jsScope = {};
+
+    function printLog(msg, type = "normal") {
+        const div = document.createElement('div');
+        div.className = `log-${type}`;
+        div.textContent = `> ${msg}`;
+        document.getElementById('log').appendChild(div);
+        document.getElementById('log').scrollTop = 9999;
+    }
+
+    // 保存・読込
+    const saveData = () => { localStorage.setItem('kai_code', document.getElementById('editor').value); printLog("保存しました。"); };
+    const loadData = () => { document.getElementById('editor').value = localStorage.getItem('kai_code') || ""; printLog("読み込みました。"); };
+
+    async function runKaiPro() {
+        const logArea = document.getElementById('log');
+        const canvas = document.getElementById('canvas');
+        logArea.innerHTML = "";
+        canvas.innerHTML = "";
+        variables = {}; lists = {}; jsScope = {};
+
+        const lines = document.getElementById('editor').value.split('\n');
+        let skipMode = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            let l = lines[i].trim();
+            if (!l || l.startsWith("com//")) continue;
+
+            let matched = false;
+
+            // 1. JSモード (++StartScript++)
+            if (l.startsWith("++StartScript++")) {
+                let jsBlock = ""; i++;
+                while(i < lines.length && !lines[i].includes("++endscript++")) {
+                    jsBlock += lines[i] + "\n"; i++;
+                }
+                try {
+                    let func = new Function('scope', jsBlock + "\nreturn this;");
+                    Object.assign(jsScope, func.call(window, jsScope));
+                } catch(e) { printLog("JS実行エラー: " + e.message, "error"); }
+                matched = true;
+            }
+
+            // 2. ログ出力 (disp, cav, ere)
+            else if (l.startsWith("disp(") || l.startsWith("ere(") || l.startsWith("cav(")) {
+                let type = l.startsWith("disp") ? "normal" : (l.startsWith("ere") ? "error" : "warn");
+                let content = l.match(/\((.*)\)/)[1].replace(/"/g, "");
+                let out;
+                if (content.startsWith("JS,")) {
+                    out = jsScope[content.split(",")[1]] || "undefined";
+                } else if (content.includes("=")) { // リスト引き出し (R="0")
+                    let [ln, idx] = content.replace(/[\(\)]/g,"").split("=");
+                    out = lists[ln] ? lists[ln][parseInt(idx.replace(/"/g,""))] : "undefined";
+                } else {
+                    out = variables[content] !== undefined ? variables[content] : content;
+                }
+                printLog(out, type);
+                matched = true;
+            }
+
+            // 3. 入力 (ent)
+            else if (l.startsWith("ent")) {
+                let input = prompt("");
+                if (l.includes(",")) {
+                    variables[l.split(",")[1].trim()] = input;
+                }
+                printLog("入力内容: " + input);
+                matched = true;
+            }
+
+            // 4. 待機 ({{ "n" }})
+            else if (l.startsWith("{{")) {
+                let sec = l.match(/\{\{"?(\d+)"?\}\}/)[1];
+                await new Promise(r => setTimeout(r, parseInt(sec) * 1000));
+                matched = true;
+            }
+
+            // 5. 条件分岐 (if, else, }})
+            else if (l.startsWith("if")) {
+                let cond = l.match(/\((.*)\)/)[1].split("=");
+                let left = variables[cond[0].trim()] || cond[0].trim().replace(/"/g,"");
+                let right = variables[cond[1].trim()] || cond[1].trim().replace(/"/g,"");
+                if (left != right) skipMode = true;
+                matched = true;
+            }
+            else if (l.startsWith("else")) {
+                skipMode = !skipMode;
+                matched = true;
+            }
+            else if (l.includes("}}")) {
+                skipMode = false;
+                matched = true;
+            }
+
+            // 6. 計算 & 代入
+            else if (l.includes("=")) {
+                let [name, val] = l.split("=").map(s => s.trim());
+                if (val.startsWith("cal(")) {
+                    let exp = val.match(/\((.*)\)/)[1];
+                    // 変数展開 (JS取り寄せ含む)
+                    let evalStr = exp.replace(/JS,([a-zA-Z0-9_]+)/g, (m,v)=>jsScope[v] || 0)
+                                     .replace(/([a-zA-Z0-9_ぁ-んァ-ヶー一-龠]+)/g, m => variables[m] !== undefined ? variables[m] : m)
+                                     .replace(/"/g, "");
+                    try { variables[name] = eval(evalStr); } catch(e) { printLog("計算エラー", "error"); }
+                } else {
+                    variables[name] = val.replace(/"/g, "");
+                }
+                matched = true;
+            }
+
+            // 7. 画像系 (git, Motiongit)
+            else if (l.startsWith("git") || l.startsWith("Motiongit")) {
+                if (l.startsWith("giturl")) {
+                    let id = (l.match(/id=([^\s]+)/) || [])[1];
+                    let url = (l.match(/url="([^"]+)"/) || [])[1] || l.match(/="(.*)"/)[1];
+                    let img = document.createElement('img');
+                    img.id = id; img.src = url; img.className = 'kaipro-img';
+                    canvas.appendChild(img);
+                } else if (l.startsWith("Motiongit")) {
+                    let id = (l.match(/id=([^\s]+)/) || [])[1];
+                    let x = (l.match(/x="([^"]+)"/) || [])[1];
+                    let y = (l.match(/y="([^"]+)"/) || [])[1];
+                    let t = document.getElementById(id);
+                    if (t) { t.style.left = x + "px"; t.style.top = y + "px"; }
+                }
+                matched = true;
+            }
+
+            // 8. リスト系 ({R})
+            else if (l.startsWith("{")) {
+                let listName = l.match(/\{([^,\]\}]+)/)[1];
+                if (l.includes("[")) {
+                    lists[listName] = JSON.parse(l.match(/\[.*\]/)[0].replace(/'/g, '"'));
+                } else if (l.includes("push=")) {
+                    let val = l.match(/push="(.*)"/)[1];
+                    if(!lists[listName]) lists[listName] = [];
+                    lists[listName].push(val);
+                } else if (l.includes("De")) {
+                    let idx = l.match(/De="(\d+)"/);
+                    if(idx) lists[listName].splice(parseInt(idx[1]), 1);
+                    else lists[listName] = [];
+                }
+                matched = true;
+            }
+
+            // 9. キーボード (keypush)
+            else if (l.startsWith("keypush")) {
+                let key = l.match(/"(.*)"/)[1].toUpperCase();
+                printLog(`${key}キー入力を待機中...`);
+                // (簡易的な実装)
+                matched = true;
+            }
+
+            // --- 意味不明判定 ---
+            if (!matched && !skipMode) {
+                printLog(`エラー(行 ${i + 1}): 「${l}」は意味不明な言語です。`, "error");
+            }
+        }
+    }
+</script>
+</body>
+</html>
