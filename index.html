@@ -2,149 +2,162 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://2015kaito8169.github.io">
-    <title>kaiprogran </title>
+    <title>kaiprogran Official IDE</title>
     <style>
         :root { --bg: #0d1117; --panel: #161b22; --accent: #58a6ff; --text: #c9d1d9; }
-        body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         header { background: var(--panel); padding: 10px 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
         .main-layout { display: flex; flex: 1; overflow: hidden; padding: 10px; gap: 10px; }
         .editor-section { flex: 1.2; display: flex; flex-direction: column; }
         .log-section { flex: 0.8; display: flex; flex-direction: column; background: #000; border-radius: 8px; border: 1px solid #30363d; }
         textarea { flex: 1; background: var(--panel); color: #e6edf3; border: 1px solid #30363d; padding: 15px; font-size: 16px; border-radius: 8px; outline: none; resize: none; }
         .toolbar { margin-bottom: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
-        button { padding: 6px 12px; border-radius: 6px; border: 1px solid #30363d; cursor: pointer; font-weight: bold; background: #21262d; color: #c9d1d9; }
+        button { padding: 6px 12px; border-radius: 6px; border: 1px solid #30363d; cursor: pointer; font-weight: bold; background: #21262d; color: #c9d1d9; font-size: 13px; }
         #runBtn { background: #238636; color: white; border: none; }
         #logArea { flex: 1; padding: 15px; overflow-y: auto; white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
         .normal { color: #7ee787; } .warn { color: #d29922; } .error { color: #f85149; }
-        #helpModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 80%; background: var(--panel); border: 2px solid var(--accent); z-index: 1000; padding: 25px; border-radius: 12px; overflow-y: auto; text-align: center; }
+
+        /* 説明画面（モーダル）の修正 */
+        #helpModal { 
+            display: none; /* 最初は隠す */
+            position: fixed; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 400px; max-width: 90%; /* デカすぎ防止 */
+            max-height: 80vh; 
+            background: #1c1c1e; border: 2px solid var(--accent); 
+            z-index: 9999; padding: 20px; border-radius: 12px; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            overflow-y: auto;
+        }
+        .close-x { position: absolute; top: 10px; right: 15px; cursor: pointer; color: #ff453a; font-size: 20px; font-weight: bold; }
+        .more-btn { background: var(--accent); color: #000; padding: 10px; border-radius: 6px; display: block; width: 100%; text-align: center; text-decoration: none; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight:bold; color:var(--accent);">kaiprogran IDE v1.4</div>
-    <button onclick="toggleHelp()" style="background:#ffcb6b; color:#000;">説明を見る</button>
+    <div style="font-weight:bold; color:var(--accent);">kaiprogran IDE v1.5</div>
+    <button onclick="toggleHelp()" style="background:#ffcb6b; color:#000; border:none;">説明を見る</button>
 </header>
 
 <div class="main-layout">
     <div class="editor-section">
         <div class="toolbar">
             <button id="runBtn" onclick="runKaiPro()">▶ RUN</button>
-            <button onclick="saveData(1)">💾メモリーボックス1 </button><button onclick="saveData(2)">)💾)">メモリーボックス2</button><button onclick="saveData(3)">💾メモリーボックス3</button>
-            <button onclick="loadData(1)">📂 メモリーボックス1を開く</button><button onclick="loadData(2)">📂 メモリーボックス2を開く</button><button onclick="loadData(3)">📂 メモリーボックス3を開く</button>
+            <button onclick="saveData(1)">💾 1</button><button onclick="saveData(2)">💾 2</button><button onclick="saveData(3)">💾 3</button>
+            <button onclick="loadData(1)">📂 1</button><button onclick="loadData(2)">📂 2</button><button onclick="loadData(3)">📂 3</button>
             <button onclick="copyRaw('script')">コード複製</button>
             <button onclick="copyRaw('log')">ログ複製</button>
         </div>
-        <textarea id="editor" spellcheck="false" placeholder="コードを入力...">disp("3秒以内に[Z]を押せ！")
-{{ "3" }}
-keypush"Z" { disp("成功！おめでとう！") }
-disp("終了！")</textarea>
+        <textarea id="editor" spellcheck="false">disp("kaiprogran へようこそ")</textarea>
     </div>
     <div class="log-section"><div id="logArea"></div></div>
 </div>
 
-<h2>kaiprogran リファレンス</h2>
-<div style="text-align:left; line-height:1.8; font-size:14px; color:#ddd; padding:10px;">
-    <p>● <b>disp("内容")</b> : ログに出力（""なしは変数）。</p>
-    <p>● <b>cav("警告") / ere("エラー")</b> : 黄色(警告)と赤色(エラー)でログを出力。</p>
-    <p>● <b>if (A = B) / else / }}</b> : 条件分岐。最後は必ず <b>}}</b> で終了。比較は <b>=</b> 1つ。</p>
-    <p>● <b>cal("式")</b> : 計算。 cal(var1 "+" var2) のように変数も結合可能。</p>
-    <p>● <b>変数 = "内容"</b> : 変数に代入。日本語変数もOK。</p>
-    <p>● <b>JS,変数</b> : JavaScriptモード(++StartScript++)内の変数をお取り寄せ。</p>
-    <p>● <b>ent,変数</b> : ログに入力欄を表示し、結果を変数に保存。</p>
-    <p>● <b>{{ "秒数" }}</b> : 指定した秒数だけプログラムを一時停止。</p>
-    <p>● <b>keypush"A" { 命令 }</b> : Aキー（必ず大文字）が押された瞬間に { } 内を実行。ShiftやEnterも対応。</p>
-    <p>● <b>{R}["a","b"]</b> : リスト作成。 pushで追加、 De="0"で削除、 (R="0")で抽出。</p>
-    <p>● <b>icp("内容")</b> : コピー機能。 """log"""で全ログ、 """script"""で全コードコピー。</p>
-    <p>● <b>++StartScript++</b> : JavaScriptを直接実行（この中では <b>com//</b> は使用不可）。</p>
+<!-- 説明画面 -->
+<div id="helpModal">
+    <span class="close-x" onclick="toggleHelp()">×</span>
+    <h2 style="color:var(--accent); margin-top:0;">kaiprogran 説明</h2>
+    <div style="text-align:left; font-size:13px; line-height:1.6;">
+        <p>● <b>disp("内容")</b> : ログ出力</p>
+        <p>● <b>if (A = B) / else / }}</b> : 条件分岐</p>
+        <p>● <b>icp("...")</b> : コピー機能</p>
+        <p>● <b>keypush"A" { 命令 }</b> : キー入力</p>
+    </div>
+    <a href="https://2015kaito8169.github.io" target="_blank" class="more-btn">もっと詳しく (公式サイト)</a>
+    <button onclick="toggleHelp()" style="margin-top:10px; width:100%; background:#444; color:#fff;">閉じる</button>
 </div>
-<hr style="border:0; border-top:1px solid #444; margin:15px 0;">
-<button class="more-btn" onclick="window.open('https://2015kaito8169.github.io/kaides/', '_blank')" style="background:#58a6ff; color:#000; padding:12px 24px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">もっと詳しく (公式Page)</button>
-
 
 <script>
     let vars = {}; let lists = {}; let jsScope = {};
     const logArea = document.getElementById('logArea');
     const editor = document.getElementById('editor');
 
+    // 説明の表示・非表示切り替え
+    function toggleHelp() { 
+        const m = document.getElementById('helpModal'); 
+        m.style.display = (m.style.display === 'block') ? 'none' : 'block'; 
+    }
+
     function print(msg, cls="normal") {
         const d = document.createElement('div'); d.className = cls; d.textContent = `> ${msg}`;
         logArea.appendChild(d); logArea.scrollTop = logArea.scrollHeight;
     }
 
-    function toggleHelp() { const m = document.getElementById('helpModal'); m.style.display = m.style.display === 'block' ? 'none' : 'block'; }
     function saveData(n) { localStorage.setItem('kp_s'+n, editor.value); alert(`保存${n}完了`); }
-    function loadData(n) { const d = localStorage.getItem('kp_s'+n); if(d){editor.value=d; alert(`読込${n}完了`);} }
+    function loadData(n) { const d = localStorage.getItem('kp_s'+n); if(d){editor.value=d; alert(`読込${n}完了`);}else{alert("空です");} }
     async function copyRaw(t) { await navigator.clipboard.writeText(t==='log'?logArea.innerText:editor.value); alert(t+"コピー完了"); }
-
-    async function executeSingleLine(l) {
-        l = l.trim();
-        if (!l || l.startsWith("com//")) return true;
-
-        if (l.startsWith("disp(") || l.startsWith("ere(") || l.startsWith("cav(")) {
-            let t = l.startsWith("disp") ? "normal" : (l.startsWith("ere") ? "error" : "warn");
-            let c = l.match(/\((.*)\)/);
-            if(c) {
-                let inner = c[1].replace(/"/g,"");
-                let out = inner.startsWith("JS,") ? (jsScope[inner.split(",")[1]] || "undefined") : (vars[inner] !== undefined ? vars[inner] : inner);
-                print(out, t);
-            }
-            return true;
-        }
-
-        if (l.startsWith("icp(")) {
-            let inner = l.match(/\((.*)\)/);
-            if(inner) {
-                let txt = inner[1] === '"""log"""' ? logArea.innerText : inner[1].replace(/"/g,"");
-                navigator.clipboard.writeText(txt);
-            }
-            return true;
-        }
-        
-        if (l.includes("=")) {
-            let p = l.split("="); let n = p[0].trim(); let v = p[1].trim();
-            if (v.startsWith("cal(")) {
-                let exp = v.match(/\((.*)\)/)[1].replace(/JS,([a-z0-9]+)/gi, (m,v)=>jsScope[v]||0)
-                             .replace(/([ぁ-んァ-ヶー一-龠a-z0-9]+)/gi, m => vars[m] !== undefined ? vars[m] : m).replace(/"/g,"");
-                try { vars[n] = eval(exp); } catch(e) { print("計算失敗", "error"); }
-            } else { vars[n] = v.replace(/"/g, ""); }
-            return true;
-        }
-
-        return false; 
-    }
 
     async function runKaiPro() {
         logArea.innerHTML = ""; vars = {}; lists = {}; jsScope = {};
         const lines = editor.value.split('\n');
+        let skip = false; let ifRes = false;
 
         for (let i = 0; i < lines.length; i++) {
             let l = lines[i].trim();
             if (!l || l.startsWith("com//")) continue;
+            if (skip && !l.startsWith("else") && !l.includes("}}")) continue;
 
-            if (l.startsWith("keypush")) {
-                let key = l.match(/"([^"]+)"/)[1].toUpperCase();
-                let action = l.match(/\{(.*)\}/); 
-                print(`${key}キーを待機中...`, "warn");
-                
-                window.addEventListener('keydown', (e) => {
-                    if (e.key.toUpperCase() === key) {
-                        if (action) executeSingleLine(action[1]); 
-                        else print(`${key}が押されました`, "normal");
-                    }
-                }, { once: true });
-                continue;
+            let hit = false;
+            if (l.startsWith("disp(") || l.startsWith("ere(") || l.startsWith("cav(")) {
+                let t = l.startsWith("disp") ? "normal" : (l.startsWith("ere") ? "error" : "warn");
+                let c = l.match(/\((.*)\)/);
+                if(c){
+                    let inner = c[1].replace(/"/g,"");
+                    let out = inner.startsWith("JS,") ? (jsScope[inner.split(",")[1]] || "undefined") : (vars[inner] !== undefined ? vars[inner] : inner);
+                    print(out, t); hit = true;
+                }
             }
-
-            if (l.startsWith("{{")) {
-                let s = l.match(/\d+/)[0];
-                await new Promise(r => setTimeout(r, s * 1000));
-                continue;
+            else if (l.startsWith("if")) {
+                let m = l.match(/\((.*)\)/);
+                if(m){
+                    let cond = m[1].split("=");
+                    let L = vars[cond[0].trim()] || cond[0].trim().replace(/"/g,"");
+                    let R = vars[cond[1].trim()] || cond[1].trim().replace(/"/g,"");
+                    if(L == R){ skip = false; ifRes = true; } else { skip = true; ifRes = false; }
+                }
+                hit = true;
             }
-
-            let hit = await executeSingleLine(l);
-            if (!hit) print(`エラー: 「${l}」は意味不明です`, "error");
+            else if (l.startsWith("else")) { skip = ifRes; hit = true; }
+            else if (l.includes("}}")) { skip = false; hit = true; }
+            else if (l.startsWith("keypush")) {
+                let kMatch = l.match(/"([^"]+)"/);
+                if(kMatch){
+                    let key = kMatch[1].toUpperCase();
+                    let actionMatch = l.match(/\{(.*)\}/);
+                    print(`${key}キー待機中...`, "warn");
+                    window.addEventListener('keydown', (e) => {
+                        if (e.key.toUpperCase() === key) {
+                            if(actionMatch) { 
+                                let action = actionMatch[1].trim();
+                                if(action.startsWith("disp(")) print(action.match(/\("(.*)"\)/)[1]);
+                            } else { print(`${key}入力成功！`, "normal"); }
+                        }
+                    }, { once: true });
+                }
+                hit = true;
+            }
+            else if (l.startsWith("icp(")) {
+                let inner = l.match(/\((.*)\)/)[1];
+                let txt = (inner === '"""log"""') ? logArea.innerText : (inner === '"""script"""' ? editor.value : inner.replace(/"/g,""));
+                navigator.clipboard.writeText(txt); hit = true;
+            }
+            else if (l.includes("=")) {
+                let p = l.split("="); let n = p[0].trim(); let v = p[1].trim();
+                if (v.startsWith("cal(")) {
+                    let exp = v.match(/\((.*)\)/)[1].replace(/JS,([a-z0-9]+)/gi, (m,v)=>jsScope[v]||0).replace(/([ぁ-んァ-ヶー一-龠a-z0-9]+)/gi, m => vars[m] !== undefined ? vars[m] : m).replace(/"/g,"");
+                    try { vars[n] = eval(exp); } catch(e) { print("計算不可", "error"); }
+                } else { vars[n] = v.replace(/"/g, ""); }
+                hit = true;
+            }
+            else if (l.startsWith("{{") || l.startsWith("ent")) {
+                if(l.startsWith("{{")){ let s = l.match(/\d+/); await new Promise(r => setTimeout(r, parseInt(s[0]) * 1000)); }
+                if(l.startsWith("ent")){ let r = prompt("入力"); let vName = l.split(",")[1]; if(vName) vars[vName.trim()]=r; print(r); }
+                hit = true;
+            }
+            if (!hit && !skip) print(`エラー: 「${l}」は意味不明な言語です`, "error");
         }
     }
 </script>
