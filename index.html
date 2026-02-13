@@ -2,7 +2,6 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://2015kaito8169.github.io">
     <title>kaiprogran Official IDE</title>
     <style>
@@ -14,18 +13,17 @@
         .log-section { flex: 0.8; display: flex; flex-direction: column; background: #000; border-radius: 8px; border: 1px solid #30363d; }
         textarea { flex: 1; background: var(--panel); color: #e6edf3; border: 1px solid #30363d; padding: 15px; font-size: 16px; border-radius: 8px; outline: none; resize: none; }
         .toolbar { margin-bottom: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
-        button { padding: 6px 12px; border-radius: 6px; border: 1px solid #30363d; cursor: pointer; font-weight: bold; background: #21262d; color: #c9d1d9; font-size: 13px; }
+        button { padding: 6px 12px; border-radius: 6px; border: 1px solid #30363d; cursor: pointer; font-weight: bold; background: #21262d; color: #c9d1d9; }
         #runBtn { background: #238636; color: white; border: none; }
         #logArea { flex: 1; padding: 15px; overflow-y: auto; white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
         .normal { color: #7ee787; } .warn { color: #d29922; } .error { color: #f85149; }
         #helpModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 80%; background: var(--panel); border: 2px solid var(--accent); z-index: 1000; padding: 25px; border-radius: 12px; overflow-y: auto; text-align: center; }
-        .more-btn { background: var(--accent); color: #000; padding: 15px 30px; font-size: 18px; cursor: pointer; border-radius: 8px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight:bold; color:var(--accent);">kaiprogran IDE v1.3</div>
+    <div style="font-weight:bold; color:var(--accent);">kaiprogran IDE v1.4</div>
     <button onclick="toggleHelp()" style="background:#ffcb6b; color:#000;">説明を見る</button>
 </header>
 
@@ -33,36 +31,24 @@
     <div class="editor-section">
         <div class="toolbar">
             <button id="runBtn" onclick="runKaiPro()">▶ RUN</button>
-            <button onclick="saveData(1)">💾 1</button><button onclick="saveData(2)">💾 2</button><button onclick="saveData(3)">💾 3</button>
-            <button onclick="loadData(1)">📂 1</button><button onclick="loadData(2)">📂 2</button><button onclick="loadData(3)">📂 3</button>
+            <button onclick="saveData(1)">💾メモリーボックス1 </button><button onclick="saveData(2)">)💾)">メモリーボックス2</button><button onclick="saveData(3)">💾メモリーボックス3</button>
+            <button onclick="loadData(1)">📂 メモリーボックス1を開く</button><button onclick="loadData(2)">📂 メモリーボックス2を開く</button><button onclick="loadData(3)">📂 メモリーボックス3を開く</button>
             <button onclick="copyRaw('script')">コード複製</button>
             <button onclick="copyRaw('log')">ログ複製</button>
         </div>
-        <textarea id="editor" spellcheck="false" placeholder="ここにコードを入力...">disp("3秒以内に[Z]を押せ！")
-disp("3")
-{{ "1" }}
-disp("2")
-{{ "1" }}
-disp("1")
-{{ "1" }}
-disp("0")
-
-keypush"Z" {
-  disp("成功！")
-}</textarea>
+        <textarea id="editor" spellcheck="false" placeholder="コードを入力...">disp("3秒以内に[Z]を押せ！")
+{{ "3" }}
+keypush"Z" { disp("成功！おめでとう！") }
+disp("終了！")</textarea>
     </div>
     <div class="log-section"><div id="logArea"></div></div>
 </div>
 
 <div id="helpModal">
     <h2>kaiprogran リファレンス</h2>
-    <div style="text-align:left; margin-bottom:20px;">
-        <p>● <b>keypush:</b> <code>keypush"A" {</code> のように書いてキー入力を待ちます。</p>
-        <p>● <b>icp:</b> <code>icp("""log""")</code>で全ログ、<code>icp("""script""")</code>で全コードコピー。</p>
-        <p>● <b>JSお取り寄せ:</b> <code>++StartScript++</code> 内で <code>this.a = 1</code> とし、外で <code>JS,a</code> で呼び出し。</p>
-    </div>
-    <button class="more-btn" onclick="window.open('https://2015kaito8169.github.io', '_blank')">もっと詳しく</button>
-    <button onclick="toggleHelp()" style="margin-top:20px; width:100%;">閉じる</button>
+    <p>● <b>keypush"A" { 命令 }</b> : キーが押された瞬間に中身を実行！</p>
+    <button onclick="window.open('https://2015kaito8169.github.io', '_blank')" style="background:var(--accent); padding:15px; border-radius:8px;">もっと詳しく</button>
+    <button onclick="toggleHelp()" style="margin-top:20px;">閉じる</button>
 </div>
 
 <script>
@@ -76,103 +62,77 @@ keypush"Z" {
     }
 
     function toggleHelp() { const m = document.getElementById('helpModal'); m.style.display = m.style.display === 'block' ? 'none' : 'block'; }
-    function saveData(n) { localStorage.setItem('kp_s'+n, editor.value); alert(`スロット${n}に保存しました`); }
-    function loadData(n) { const d = localStorage.getItem('kp_s'+n); if(d){editor.value=d; alert(`スロット${n}を読み込みました`);}else{alert("空です");} }
-    async function copyRaw(t) { await navigator.clipboard.writeText(t==='log'?logArea.innerText:editor.value); alert(t+"をコピーしました"); }
+    function saveData(n) { localStorage.setItem('kp_s'+n, editor.value); alert(`保存${n}完了`); }
+    function loadData(n) { const d = localStorage.getItem('kp_s'+n); if(d){editor.value=d; alert(`読込${n}完了`);} }
+    async function copyRaw(t) { await navigator.clipboard.writeText(t==='log'?logArea.innerText:editor.value); alert(t+"コピー完了"); }
+
+    async function executeSingleLine(l) {
+        l = l.trim();
+        if (!l || l.startsWith("com//")) return true;
+
+        if (l.startsWith("disp(") || l.startsWith("ere(") || l.startsWith("cav(")) {
+            let t = l.startsWith("disp") ? "normal" : (l.startsWith("ere") ? "error" : "warn");
+            let c = l.match(/\((.*)\)/);
+            if(c) {
+                let inner = c[1].replace(/"/g,"");
+                let out = inner.startsWith("JS,") ? (jsScope[inner.split(",")[1]] || "undefined") : (vars[inner] !== undefined ? vars[inner] : inner);
+                print(out, t);
+            }
+            return true;
+        }
+
+        if (l.startsWith("icp(")) {
+            let inner = l.match(/\((.*)\)/);
+            if(inner) {
+                let txt = inner[1] === '"""log"""' ? logArea.innerText : inner[1].replace(/"/g,"");
+                navigator.clipboard.writeText(txt);
+            }
+            return true;
+        }
+        
+        if (l.includes("=")) {
+            let p = l.split("="); let n = p[0].trim(); let v = p[1].trim();
+            if (v.startsWith("cal(")) {
+                let exp = v.match(/\((.*)\)/)[1].replace(/JS,([a-z0-9]+)/gi, (m,v)=>jsScope[v]||0)
+                             .replace(/([ぁ-んァ-ヶー一-龠a-z0-9]+)/gi, m => vars[m] !== undefined ? vars[m] : m).replace(/"/g,"");
+                try { vars[n] = eval(exp); } catch(e) { print("計算失敗", "error"); }
+            } else { vars[n] = v.replace(/"/g, ""); }
+            return true;
+        }
+
+        return false; 
+    }
 
     async function runKaiPro() {
         logArea.innerHTML = ""; vars = {}; lists = {}; jsScope = {};
         const lines = editor.value.split('\n');
-        let skip = false; let ifRes = false;
 
         for (let i = 0; i < lines.length; i++) {
             let l = lines[i].trim();
             if (!l || l.startsWith("com//")) continue;
-            if (skip && !l.startsWith("else") && !l.includes("}}")) continue;
 
-            let hit = false;
-
-            // disp / ere / cav
-            if (l.startsWith("disp(") || l.startsWith("ere(") || l.startsWith("cav(")) {
-                let t = l.startsWith("disp") ? "normal" : (l.startsWith("ere") ? "error" : "warn");
-                let c = l.match(/\((.*)\)/);
-                if(c){
-                    let inner = c[1].replace(/"/g,"");
-                    let out = inner.startsWith("JS,") ? (jsScope[inner.split(",")[1]] || "undefined") : (vars[inner] !== undefined ? vars[inner] : inner);
-                    print(out, t); hit = true;
-                }
-            }
-            // icp (コピー)
-            else if (l.startsWith("icp(")) {
-                let inner = l.match(/\((.*)\)/);
-                if(inner){
-                    let target = inner[1]; let txt = "";
-                    if(target === '"""log"""') txt = logArea.innerText;
-                    else if(target === '"""script"""') txt = editor.value;
-                    else if(target.includes('""log"""')) { let idx = target.match(/\d+/); txt = logArea.innerText.split('\n')[idx] || ""; }
-                    else { let k = target.replace(/"/g,""); txt = vars[k] !== undefined ? vars[k] : k; }
-                    navigator.clipboard.writeText(txt);
-                }
-                hit = true;
-            }
-            // if / else / }}
-            else if (l.startsWith("if")) {
-                let m = l.match(/\((.*)\)/);
-                if(m){
-                    let cond = m[1].split("=");
-                    let L = vars[cond[0].trim()] || cond[0].trim().replace(/"/g,"");
-                    let R = vars[cond[1].trim()] || cond[1].trim().replace(/"/g,"");
-                    if(L == R){ skip = false; ifRes = true; } else { skip = true; ifRes = false; }
-                }
-                hit = true;
-            }
-            else if (l.startsWith("else")) { skip = ifRes; hit = true; }
-            else if (l.includes("}}")) { skip = false; hit = true; }
-            // keypush (命令後のスペースや括弧を許容)
-            else if (l.startsWith("keypush")) {
-                let kMatch = l.match(/"([^"]+)"/);
-                if(kMatch){
-                    let key = kMatch[1].toUpperCase();
-                    print(`${key}キー入力待機中...`, "warn");
-                    window.addEventListener('keydown', (e) => {
-                        if (e.key.toUpperCase() === key) { print(`${key}入力成功！`, "normal"); }
-                    }, { once: true });
-                }
-                hit = true;
-            }
-            // 括弧単体でのエラーを回避
-            else if (l === "{" || l === "}") { hit = true; }
-            // JSモード
-            else if (l.startsWith("++StartScript++")) {
-                let js = ""; i++;
-                while(i < lines.length && !lines[i].includes("++endscript++")) { js += lines[i] + "\n"; i++; }
-                try {
-                    let f = new Function('scope', js + "\nreturn this;");
-                    Object.assign(jsScope, f.call(window, jsScope));
-                } catch(e) { print(e.message, "error"); }
-                hit = true;
-            }
-            // 代入 / cal
-            else if (l.includes("=")) {
-                let p = l.split("="); let n = p[0].trim(); let v = p[1].trim();
-                if (v.startsWith("cal(")) {
-                    let expMatch = v.match(/\((.*)\)/);
-                    if(expMatch){
-                        let exp = expMatch[1].replace(/JS,([a-z0-9]+)/gi, (m,v)=>jsScope[v]||0)
-                                     .replace(/([ぁ-んァ-ヶー一-龠a-z0-9]+)/gi, m => vars[m] !== undefined ? vars[m] : m).replace(/"/g,"");
-                        try { vars[n] = eval(exp); } catch(e) { print("計算不可", "error"); }
+            if (l.startsWith("keypush")) {
+                let key = l.match(/"([^"]+)"/)[1].toUpperCase();
+                let action = l.match(/\{(.*)\}/); 
+                print(`${key}キーを待機中...`, "warn");
+                
+                window.addEventListener('keydown', (e) => {
+                    if (e.key.toUpperCase() === key) {
+                        if (action) executeSingleLine(action[1]); 
+                        else print(`${key}が押されました`, "normal");
                     }
-                } else { vars[n] = v.replace(/"/g, ""); }
-                hit = true;
-            }
-            // 待機 / ent / リスト
-            else if (l.startsWith("{{") || l.startsWith("ent") || l.startsWith("{")) {
-                if(l.startsWith("{{")){ let s = l.match(/\d+/); await new Promise(r => setTimeout(r, parseInt(s) * 1000)); }
-                if(l.startsWith("ent")){ let r = prompt("入力"); let vName = l.split(",")[1]; if(vName) vars[vName.trim()]=r; print(r); }
-                hit = true;
+                }, { once: true });
+                continue;
             }
 
-            if (!hit && !skip) print(`エラー: 「${l}」は意味不明な言語です`, "error");
+            if (l.startsWith("{{")) {
+                let s = l.match(/\d+/)[0];
+                await new Promise(r => setTimeout(r, s * 1000));
+                continue;
+            }
+
+            let hit = await executeSingleLine(l);
+            if (!hit) print(`エラー: 「${l}」は意味不明です`, "error");
         }
     }
 </script>
