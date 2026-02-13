@@ -10,37 +10,37 @@
         body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         header { background: var(--panel); padding: 10px 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
         .main-layout { display: flex; flex: 1; overflow: hidden; padding: 10px; gap: 10px; }
-        .editor-section { flex: 1.2; display: flex; flex-direction: column; }
-        .log-section { flex: 0.8; display: flex; flex-direction: column; background: #000; border-radius: 8px; border: 1px solid #30363d; }
-        textarea { flex: 1; background: var(--panel); color: #e6edf3; border: 1px solid #30363d; padding: 15px; font-size: 16px; border-radius: 8px; outline: none; resize: none; line-height: 1.5; }
+        .editor-section { flex: 1.2; display: flex; flex-direction: column; position: relative; }
         
-        /* シークレットコード用の透明化スタイル */
-        .secret-blur { color: transparent !important; text-shadow: 0 0 10px rgba(255,255,255,0.5); pointer-events: none; }
+        /* エディタ完全消滅用スタイル */
+        #editor { flex: 1; background: var(--panel); color: #e6edf3; border: 1px solid #30363d; padding: 15px; font-size: 16px; border-radius: 8px; outline: none; resize: none; line-height: 1.5; }
+        .editor-hidden { display: none !important; }
+        
+        /* 消えている時の身代わり表示 */
+        #secretMsg { display: none; flex: 1; border: 2px dashed #30363d; border-radius: 8px; justify-content: center; align-items: center; color: #30363d; font-size: 1.2rem; }
 
+        .log-section { flex: 0.8; display: flex; flex-direction: column; background: #000; border-radius: 8px; border: 1px solid #30363d; }
         .toolbar { margin-bottom: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
         button { padding: 6px 12px; border-radius: 6px; border: 1px solid #30363d; cursor: pointer; font-weight: bold; background: #21262d; color: #c9d1d9; font-size: 13px; }
         #runBtn { background: #238636; color: white; border: none; }
         #logArea { flex: 1; padding: 15px; overflow-y: auto; white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
         .normal { color: #7ee787; } .warn { color: #d29922; } .error { color: #f85149; }
 
-        /* 説明画面：ブワッと出るアニメーション */
+        /* 説明画面（ブワッ） */
         #helpModal { 
             display: none; position: fixed; top: 50%; left: 50%; 
             transform: translate(-50%, -50%) scale(0.5); 
-            width: 420px; max-width: 90%; max-height: 85vh; 
-            background: #1c1c1e; border: 2px solid var(--accent); 
-            z-index: 1000; padding: 25px; border-radius: 15px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8); overflow-y: auto;
-            opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            width: 400px; max-width: 90%; background: #1c1c1e; border: 2px solid var(--accent); 
+            z-index: 1000; padding: 25px; border-radius: 15px; opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         #helpModal.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        .close-x { position: absolute; top: 10px; right: 15px; cursor: pointer; color: #ff453a; font-size: 24px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight:bold; color:var(--accent);">kaiprogran IDE v1.6</div>
+    <div style="font-weight:bold; color:var(--accent);">kaiprogran IDE v1.8</div>
     <button onclick="toggleHelp()" style="background:#ffcb6b; color:#000; border:none;">説明を見る</button>
 </header>
 
@@ -48,41 +48,47 @@
     <div class="editor-section">
         <div class="toolbar">
             <button id="runBtn" onclick="runKaiPro()">▶ RUN</button>
-            <button onclick="saveData(1)">💾 1</button><button onclick="saveData(2)">💾 2</button><button onclick="saveData(3)">💾 3</button>
-            <button onclick="loadData(1)">📂 1</button><button onclick="loadData(2)">📂 2</button><button onclick="loadData(3)">📂 3</button>
+            <button onclick="saveData(1)">💾 1</button>
+            <button onclick="saveData(2)">💾 2</button>
+            <button onclick="saveData(3)">💾 3</button>
             <button onclick="copyRaw('script')">コード複製</button>
             <button onclick="copyRaw('log')">ログ複製</button>
         </div>
-        <textarea id="editor" spellcheck="false" oninput="checkSecret(this)">disp("こんにちは")
-++StartSecretCode++
-disp("これは隠しコードです")
-++endSecretCode++
-ent,ans
->noSecret<</textarea>
+        <textarea id="editor" spellcheck="false" oninput="checkSecret(this)">disp("kaiprogran")</textarea>
+        <div id="secretMsg">🔒 Secret Mode Active</div>
     </div>
     <div class="log-section"><div id="logArea"></div></div>
 </div>
 
 <div id="helpModal">
-    <span class="close-x" onclick="toggleHelp()">×</span>
-    <h2 style="color:var(--accent); margin-top:0;">kaiprogran マニュアル</h2>
-    <div style="text-align:left; font-size:13px; line-height:1.7;">
-        <p>● <b>disp("内容")</b> : ログ出力（描画待ち修正済み）</p>
-        <p>● <b>if (A = B) / else / }}</b> : 条件分岐。比較は「=」</p>
-        <p>● <b>JS,変数</b> : ++StartScript++ 内の変数をお取り寄せ</p>
-        <p>● <b>ent,変数</b> : 入力欄。dispの後に正しく実行されます</p>
-        <p>● <b>icp("内容")</b> : """log""" でログ全体をコピー</p>
-        <p>● <b>SecretCode</b> : ++StartSecretCode++ で囲むと非表示に</p>
-    </div>
-    <a href="https://2015kaito8169.github.io" target="_blank" style="background:var(--accent); color:#000; padding:12px; border-radius:8px; display:block; text-align:center; text-decoration:none; font-weight:bold; margin-top:15px;">もっと詳しく</a>
+    <h2 style="color:var(--accent); margin-top:0;">Manual</h2>
+    <div id="helpList" style="text-align:left; font-size:13px; line-height:1.7; color:#bbb;"></div>
+    <button onclick="toggleHelp()" style="margin-top:15px; width:100%; padding:10px;">閉じる</button>
 </div>
 
 <script>
     let vars = {}; let jsScope = {};
     const logArea = document.getElementById('logArea');
     const editor = document.getElementById('editor');
+    const secretMsg = document.getElementById('secretMsg');
 
-    // 説明画面の「ブワッ」演出
+    // 完全に消えるシークレット監視
+    function checkSecret(el) {
+        const val = el.value;
+        // ++endSecretCode++ の最後の + が打たれたら消滅
+        if (val.endsWith("+") && val.includes("++endSecretCode++") && !val.includes(">noSecret<")) {
+            el.classList.add('editor-hidden');
+            secretMsg.style.display = 'flex';
+            print("System: Secret Mode Activated. (Editor Hidden)", "warn");
+        } 
+        // >noSecret< の最後の > が打たれたら出現（隠れていても入力は受け付けているため）
+        else if (val.endsWith(">") && val.includes(">noSecret<")) {
+            el.classList.remove('editor-hidden');
+            secretMsg.style.display = 'none';
+            print("System: Editor Restored.", "normal");
+        }
+    }
+
     function toggleHelp() {
         const m = document.getElementById('helpModal');
         if (m.classList.contains('show')) {
@@ -94,28 +100,16 @@ ent,ans
         }
     }
 
-    // シークレットコードのリアルタイム監視
-    function checkSecret(el) {
-        const val = el.value;
-        if (val.includes("++endSecretCode++") && !val.includes(">noSecret<")) {
-            el.classList.add('secret-blur');
-        } else if (val.includes(">noSecret<")) {
-            el.classList.remove('secret-blur');
-        }
-    }
-
     async function print(msg, cls="normal") {
         const d = document.createElement('div');
-        d.className = cls;
-        d.textContent = `> ${msg}`;
+        d.className = cls; d.textContent = `> ${msg}`;
         logArea.appendChild(d);
         logArea.scrollTop = logArea.scrollHeight;
-        // 描画を確実にするため一瞬待つ
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 60)); // 順序維持のための微小待機
     }
 
-    function saveData(n) { localStorage.setItem('kp_v16_s'+n, editor.value); alert("保存しました"); }
-    function loadData(n) { const d = localStorage.getItem('kp_v16_s'+n); if(d){editor.value=d; alert("読み込みました");} }
+    function saveData(n) { localStorage.setItem('kp_v18_s'+n, editor.value); alert("保存しました"); }
+    function loadData(n) { const d = localStorage.getItem('kp_v18_s'+n); if(d){editor.value=d; checkSecret(editor); alert("読み込みました");} }
     async function copyRaw(t) { await navigator.clipboard.writeText(t==='log'?logArea.innerText:editor.value); alert(t+"コピー完了"); }
 
     async function runKaiPro() {
@@ -129,66 +123,41 @@ ent,ans
             if (skip && !l.startsWith("else") && !l.includes("}}")) continue;
 
             let hit = false;
-            // 出力 (disp, cav, ere)
             if (l.startsWith("disp(") || l.startsWith("ere(") || l.startsWith("cav(")) {
                 let t = l.startsWith("disp") ? "normal" : (l.startsWith("ere") ? "error" : "warn");
-                let c = l.match(/\((.*)\)/);
-                if(c){
-                    let inner = c[1].replace(/"/g,"");
-                    let out = inner.startsWith("JS,") ? (jsScope[inner.split(",")[1]] || "undefined") : (vars[inner] !== undefined ? vars[inner] : inner);
-                    await print(out, t); // ここでawaitすることでentの前に表示を確定させる
-                }
-                hit = true;
+                let inner = l.match(/\("(.*)"\)/)?.[1] || l.match(/\((.*)\)/)?.[1];
+                let out = inner?.startsWith("JS,") ? (jsScope[inner.split(",")[1]] || "undefined") : (vars[inner] !== undefined ? vars[inner] : inner);
+                await print(out, t); hit = true;
             }
-            // 入力 (ent)
             else if (l.startsWith("ent")) {
-                await new Promise(r => setTimeout(r, 100)); // さらに安全策として100ms待機
-                let res = prompt("入力してください");
+                await new Promise(r => setTimeout(r, 50));
+                let res = prompt("Input:");
                 if(l.includes(",")) vars[l.split(",")[1].trim()] = res;
-                await print(res || "(空入力)");
-                hit = true;
+                await print(res || ""); hit = true;
             }
-            // if / else / }}
             else if (l.startsWith("if")) {
-                let m = l.match(/\((.*)\)/);
-                let cond = m[1].split("=");
-                let L = vars[cond[0].trim()] || cond[0].trim().replace(/"/g,"");
-                let R = vars[cond[1].trim()] || cond[1].trim().replace(/"/g,"");
+                let m = l.match(/\((.*)\)/)?.[1].split("=");
+                let L = vars[m[0].trim()] || m[0].trim().replace(/"/g,"");
+                let R = vars[m[1].trim()] || m[1].trim().replace(/"/g,"");
                 if(L == R){ skip = false; ifRes = true; } else { skip = true; ifRes = false; }
                 hit = true;
             }
             else if (l.startsWith("else")) { skip = ifRes; hit = true; }
             else if (l.includes("}}")) { skip = false; hit = true; }
-            // JSモード
-            else if (l.startsWith("++StartScript++")) {
-                let js = ""; i++;
-                while(i < lines.length && !lines[i].includes("++endscript++")) { js += lines[i] + "\n"; i++; }
-                try {
-                    let f = new Function('scope', js + "\nreturn this;");
-                    Object.assign(jsScope, f.call(window, jsScope));
-                } catch(e) { await print(e.message, "error"); }
-                hit = true;
-            }
-            // 代入 / cal
             else if (l.includes("=")) {
                 let p = l.split("="); let n = p[0].trim(); let v = p[1].trim();
                 if (v.startsWith("cal(")) {
-                    let exp = v.match(/\((.*)\)/)[1].replace(/JS,([a-z0-9]+)/gi, (m,v)=>jsScope[v]||0)
-                                 .replace(/([ぁ-んァ-ヶー一-龠a-z0-9]+)/gi, m => vars[m] !== undefined ? vars[m] : m).replace(/"/g,"");
-                    try { vars[n] = eval(exp); } catch(e) { await print("計算不可", "error"); }
+                    let exp = v.match(/\((.*)\)/)[1].replace(/JS,([a-z0-9]+)/gi, (m,v)=>jsScope[v]||0).replace(/([ぁ-んァ-ヶー一-龠a-z0-9]+)/gi, m => vars[m] !== undefined ? vars[m] : m).replace(/"/g,"");
+                    try { vars[n] = eval(exp); } catch(e) { await print("Error in calculation", "error"); }
                 } else { vars[n] = v.replace(/"/g, ""); }
                 hit = true;
             }
-            // 待機
-            else if (l.startsWith("{{")) {
-                let s = l.match(/\d+/);
-                await new Promise(r => setTimeout(r, s * 1000));
-                hit = true;
-            }
-
-            if (!hit && !skip) await print(`エラー: 「${l}」は意味不明な言語です`, "error");
+            if (!hit && !skip) await print(`Error: ${l}`, "error");
         }
     }
+
+    const helpItems = ["● disp / cav / ere : ログ出力", "● if / else / }} : 条件分岐", "● ent,変数 : 入力受付", "● JS,変数 : JS連携", "● icp : コピー機能"];
+    document.getElementById('helpList').innerHTML = helpItems.map(h => `<p>${h}</p>`).join("");
 </script>
 </body>
 </html>
