@@ -44,12 +44,24 @@ disp("終了！")</textarea>
     <div class="log-section"><div id="logArea"></div></div>
 </div>
 
-<div id="helpModal">
-    <h2>kaiprogran リファレンス</h2>
-    <p>● <b>keypush"A" { 命令 }</b> : キーが押された瞬間に中身を実行！</p>
-    <button onclick="window.open('https://2015kaito8169.github.io', '_blank')" style="background:var(--accent); padding:15px; border-radius:8px;">もっと詳しく</button>
-    <button onclick="toggleHelp()" style="margin-top:20px;">閉じる</button>
+<h2>kaiprogran リファレンス</h2>
+<div style="text-align:left; line-height:1.8; font-size:14px; color:#ddd; padding:10px;">
+    <p>● <b>disp("内容")</b> : ログに出力（""なしは変数）。</p>
+    <p>● <b>cav("警告") / ere("エラー")</b> : 黄色(警告)と赤色(エラー)でログを出力。</p>
+    <p>● <b>if (A = B) / else / }}</b> : 条件分岐。最後は必ず <b>}}</b> で終了。比較は <b>=</b> 1つ。</p>
+    <p>● <b>cal("式")</b> : 計算。 cal(var1 "+" var2) のように変数も結合可能。</p>
+    <p>● <b>変数 = "内容"</b> : 変数に代入。日本語変数もOK。</p>
+    <p>● <b>JS,変数</b> : JavaScriptモード(++StartScript++)内の変数をお取り寄せ。</p>
+    <p>● <b>ent,変数</b> : ログに入力欄を表示し、結果を変数に保存。</p>
+    <p>● <b>{{ "秒数" }}</b> : 指定した秒数だけプログラムを一時停止。</p>
+    <p>● <b>keypush"A" { 命令 }</b> : Aキー（必ず大文字）が押された瞬間に { } 内を実行。ShiftやEnterも対応。</p>
+    <p>● <b>{R}["a","b"]</b> : リスト作成。 pushで追加、 De="0"で削除、 (R="0")で抽出。</p>
+    <p>● <b>icp("内容")</b> : コピー機能。 """log"""で全ログ、 """script"""で全コードコピー。</p>
+    <p>● <b>++StartScript++</b> : JavaScriptを直接実行（この中では <b>com//</b> は使用不可）。</p>
 </div>
+<hr style="border:0; border-top:1px solid #444; margin:15px 0;">
+<button class="more-btn" onclick="window.open('https://2015kaito8169.github.io/kaides/', '_blank')" style="background:#58a6ff; color:#000; padding:12px 24px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">もっと詳しく (公式Page)</button>
+
 
 <script>
     let vars = {}; let lists = {}; let jsScope = {};
