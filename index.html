@@ -54,11 +54,15 @@
     <div class="auth-card">
         <div class="logo-icon">m</div>
         <h1>mailmail</h1>
-        <p id="mm-status" style="font-size:13px; color:#999; margin-top:10px;">すべての内容を入力しログイン</p>
-        <input type="text" id="mm-id" placeholder="ユーザーID">
+        <p id="mm-status" style="font-size:13px; color:#999; margin-top:10px;">すべての内容を入力してログイン</p>
+　　　　<a style="font-size:13px; color:#0000EE; margin-top:10px;"href="https://2015kaito8169/github.io/mailmailAPI/">このページが表示された理由</a>　
+		<input type="text" id="mm-id" placeholder="ユーザーID">
         <input type="password" id="mm-pw" placeholder="パスワード">
         <button class="login-btn" onclick="handleLogin()">ログイン</button>
-    </div>
+        <p id="mm-status" style="font-size:13px; color:#999; margin-top:10px;">アカウントをお持ちではありませんか</p>
+		<a href="https://mailmailservice.onrender.com/">新規登録</a>
+        
+	</div>
 </div>
 
 <!-- 📦 隠しコンテンツ (ログイン成功後に表示) -->
@@ -72,7 +76,6 @@
     </header>
 
     <div class="content-body">
-        <!-- ★ ここにログイン後に見せたい中身を自由に書いてください -->
         <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -112,11 +115,13 @@
             <button onclick="copyRaw('log')">ログ複製</button>
         </div>
         <textarea id="editor" spellcheck="false">com//基本テンプレート
-　　　　　disp("こんにちは")
-        cav("こんにちは")
-        var=こんにちは
-        ere(var)
-        </textarea>
+disp("こんにちは")
+cav("こんにちは")
+var=こんにちは
+ere(var)
+cav("kaiprogranはmailmail 分家APIを使用し　アカウント制を導入しました")
+cav("現在試験導入中です")
+}</textarea>
     </div>
     <div class="log-section"><div id="logArea"></div></div>
 </div>
@@ -128,7 +133,7 @@
         <p>● <b>icp:</b> <code>icp("""log""")</code> で全ログ、<code>icp("""script""")</code> で全コードコピー。</p>
         <p>● <b>JSお取り寄せ:</b> <code>++StartScript++</code> 内で <code>this.a = 1</code> とし、外で <code>JS,a</code> で呼び出し。</p>
     </div>
-    <button onclick="window.open('https://2015kaito8169.github.io/kaides/', '_blank')" style="background:var(--accent); color:#000; padding:15px 30px; font-size:18px;">もっと詳しく</button>
+    <button onclick="window.open('https://2015kaito8169.github.io', '_blank')" style="background:var(--accent); color:#000; padding:15px 30px; font-size:18px;">もっと詳しく</button>
     <button onclick="toggleHelp()" style="margin-top:20px;">閉じる</button>
 </div>
 
