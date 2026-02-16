@@ -2,149 +2,175 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://2015kaito8169.github.io">
     <title>kaiprogran Official IDE</title>
     <style>
         :root { --bg: #0d1117; --panel: #161b22; --accent: #58a6ff; --text: #c9d1d9; }
-        body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        body { font-family: 'Consolas', monospace; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; }
         header { background: var(--panel); padding: 10px 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
         .main-layout { display: flex; flex: 1; overflow: hidden; padding: 10px; gap: 10px; }
         .editor-section { flex: 1.2; display: flex; flex-direction: column; }
         .log-section { flex: 0.8; display: flex; flex-direction: column; background: #000; border-radius: 8px; border: 1px solid #30363d; }
-        
-        /* エディタ：Secret時は「文字色」を背景色と同じにする（＝打てるけど見えない） */
-        textarea { flex: 1; background: var(--panel); color: #e6edf3; border: 1px solid #30363d; padding: 15px; font-size: 16px; border-radius: 8px; outline: none; resize: none; line-height: 1.5; transition: color 0.1s; }
-        
-        /* 【修正の核】文字を背景と同化させ、かつカーソルも消す（透明） */
-        .secret-active { color: var(--panel) !important; caret-color: transparent !important; }
-
+        textarea { flex: 1; background: var(--panel); color: #e6edf3; border: 1px solid #30363d; padding: 15px; font-size: 16px; border-radius: 8px; outline: none; resize: none; }
         .toolbar { margin-bottom: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
         button { padding: 6px 12px; border-radius: 6px; border: 1px solid #30363d; cursor: pointer; font-weight: bold; background: #21262d; color: #c9d1d9; font-size: 13px; }
         #runBtn { background: #238636; color: white; border: none; }
-        #logArea { flex: 1; padding: 15px; overflow-y: auto; white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
+        #logArea { flex: 1; padding: 15px; overflow-y: auto; white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
         .normal { color: #7ee787; } .warn { color: #d29922; } .error { color: #f85149; }
-
-        /* 説明画面：ブワッ演出 */
-        #helpModal { 
-            display: none; position: fixed; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%) scale(0.5); 
-            width: 420px; max-width: 90%; background: #1c1c1e; border: 2px solid var(--accent); 
-            z-index: 1000; padding: 25px; border-radius: 15px; opacity: 0;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        #helpModal.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        #helpModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 80%; background: var(--panel); border: 2px solid var(--accent); z-index: 1000; padding: 25px; border-radius: 12px; overflow-y: auto; text-align: center; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight:bold; color:var(--accent);">kaiprogran IDE v1.9</div>
-    <button onclick="toggleHelp()" style="background:#ffcb6b; color:#000; border:none;">説明を見る</button>
+    <div style="font-weight:bold; color:var(--accent);">kaiprogran IDE v1.1</div>
+    <button onclick="toggleHelp()" style="background:#ffcb6b; color:#000;">説明を見る</button>
 </header>
 
 <div class="main-layout">
     <div class="editor-section">
         <div class="toolbar">
             <button id="runBtn" onclick="runKaiPro()">▶ RUN</button>
-            <button onclick="saveData(1)">💾 1</button>
-            <button onclick="saveData(2)">💾 2</button>
-            <button onclick="saveData(3)">💾 3</button>
+            <button onclick="saveData(1)">💾 1</button><button onclick="saveData(2)">💾 2</button><button onclick="saveData(3)">💾 3</button>
+            <button onclick="loadData(1)">📂 1</button><button onclick="loadData(2)">📂 2</button><button onclick="loadData(3)">📂 3</button>
             <button onclick="copyRaw('script')">コード複製</button>
             <button onclick="copyRaw('log')">ログ複製</button>
         </div>
-        <!-- Secretのヒントは書かない。ユーザーが自力で辿り着くもの。 -->
-        <textarea id="editor" spellcheck="false" oninput="watchSecret(this)" placeholder="ここにコードを入力...">disp("kaiprogran 起動中...")</textarea>
+        <textarea id="editor" spellcheck="false">
+            com//基本テンプレート
+            disp("こんにちは")
+            cav("こんにちは")
+            var=こんにちは
+            ere(var)
+}</textarea>
     </div>
     <div class="log-section"><div id="logArea"></div></div>
 </div>
 
 <div id="helpModal">
-    <span onclick="toggleHelp()" style="float:right; cursor:pointer; color:red;">×</span>
-    <h2 style="color:var(--accent);">Manual</h2>
-    <div id="helpList" style="text-align:left; font-size:13px; line-height:1.7;"></div>
-    <button onclick="toggleHelp()" style="width:100%; padding:10px; margin-top:10px;">閉じる</button>
+    <h2>kaiprogran リファレンス</h2>
+    <div style="text-align:left; margin-bottom:20px;">
+        <p>● <b>keypush:</b> <code>keypush"Z"</code> の後に <code>{</code> <code>内容</code> <code>}</code> と改行して書きます。</p>
+        <p>● <b>icp:</b> <code>icp("""log""")</code> で全ログ、<code>icp("""script""")</code> で全コードコピー。</p>
+        <p>● <b>JSお取り寄せ:</b> <code>++StartScript++</code> 内で <code>this.a = 1</code> とし、外で <code>JS,a</code> で呼び出し。</p>
+    </div>
+    <button onclick="window.open('https://2015kaito8169.github.io', '_blank')" style="background:var(--accent); color:#000; padding:15px 30px; font-size:18px;">もっと詳しく</button>
+    <button onclick="toggleHelp()" style="margin-top:20px;">閉じる</button>
 </div>
 
 <script>
-    let vars = {}; let jsScope = {};
+    let vars = {}; let lists = {}; let jsScope = {};
     const logArea = document.getElementById('logArea');
     const editor = document.getElementById('editor');
 
-    // 作者のこだわり：打てるけど見えない。最後の文字で判定。
-    function watchSecret(el) {
-        const val = el.value;
-        // ++endSecretCode++ の + で完全ステルス化（でも打てる！）
-        if (val.endsWith("+") && val.includes("++endSecretCode++")) {
-            if (!val.includes(">noSecret<")) {
-                el.classList.add('secret-active');
-                console.log("Secret Active"); // ログにひっそり表示
-            }
-        } 
-        // >noSecret< の > で解除
-        else if (val.endsWith(">") && val.includes(">noSecret<")) {
-            el.classList.remove('secret-active');
-            console.log("Secret Deactivated");
-        }
+    function print(msg, cls="normal") {
+        const d = document.createElement('div'); d.className = cls; d.textContent = `> ${msg}`;
+        logArea.appendChild(d); logArea.scrollTop = logArea.scrollHeight;
     }
 
-    function toggleHelp() {
-        const m = document.getElementById('helpModal');
-        if (m.classList.contains('show')) {
-            m.classList.remove('show');
-            setTimeout(() => m.style.display = 'none', 300);
-        } else {
-            m.style.display = 'block';
-            setTimeout(() => m.classList.add('show'), 10);
-        }
-    }
-
-    async function print(msg, cls="normal") {
-        const d = document.createElement('div');
-        d.className = cls; d.textContent = `> ${msg}`;
-        logArea.appendChild(d);
-        logArea.scrollTop = logArea.scrollHeight;
-        await new Promise(r => setTimeout(r, 60)); 
-    }
-
-    function saveData(n) { localStorage.setItem('kp_v19_s'+n, editor.value); alert("保存しました"); }
-    function loadData(n) { const d = localStorage.getItem('kp_v19_s'+n); if(d){editor.value=d; watchSecret(editor); alert("読み込みました");} }
-    async function copyRaw(t) { await navigator.clipboard.writeText(t==='log'?logArea.innerText:editor.value); alert(t+"コピー完了"); }
+    function toggleHelp() { const m = document.getElementById('helpModal'); m.style.display = m.style.display === 'block' ? 'none' : 'block'; }
+    function saveData(n) { localStorage.setItem('kp_s'+n, editor.value); alert(`スロット${n}に保存しました`); }
+    function loadData(n) { const d = localStorage.getItem('kp_s'+n); if(d){editor.value=d; alert(`スロット${n}を読み込みました`);}else{alert("空です");} }
+    async function copyRaw(t) { await navigator.clipboard.writeText(t==='log'?logArea.innerText:editor.value); alert(t+"をコピーしました"); }
 
     async function runKaiPro() {
-        logArea.innerHTML = ""; vars = {}; jsScope = {};
+        logArea.innerHTML = ""; vars = {}; lists = {}; jsScope = {};
         const lines = editor.value.split('\n');
         let skip = false; let ifRes = false;
 
         for (let i = 0; i < lines.length; i++) {
             let l = lines[i].trim();
-            // 実行には影響を与えず、非表示になるだけでそのまま実行される
-            if (!l || l.startsWith("com//") || l.includes("SecretCode") || l.includes("noSecret")) continue;
+            if (!l || l.startsWith("com//")) continue;
             if (skip && !l.startsWith("else") && !l.includes("}}")) continue;
 
             let hit = false;
+
+            // disp / ere / cav
             if (l.startsWith("disp(") || l.startsWith("ere(") || l.startsWith("cav(")) {
                 let t = l.startsWith("disp") ? "normal" : (l.startsWith("ere") ? "error" : "warn");
-                let inner = l.match(/\("(.*)"\)/)?.[1] || l.match(/\((.*)\)/)?.[1];
-                let out = inner?.startsWith("JS,") ? (jsScope[inner.split(",")[1]] || "undefined") : (vars[inner] !== undefined ? vars[inner] : inner);
-                await print(out, t); hit = true;
+                let c = l.match(/\((.*)\)/);
+                if(c){
+                    let inner = c[1].replace(/"/g,"");
+                    let out = inner.startsWith("JS,") ? (jsScope[inner.split(",")[1]] || "undefined") : (vars[inner] !== undefined ? vars[inner] : inner);
+                    print(out, t); hit = true;
+                }
             }
-            else if (l.startsWith("ent")) {
-                await new Promise(r => setTimeout(r, 50));
-                let res = prompt("入力してください");
-                if(l.includes(",")) vars[l.split(",")[1].trim()] = res;
-                await print(res || ""); hit = true;
+            // if / else / }}
+            else if (l.startsWith("if")) {
+                let cond = l.match(/\((.*)\)/)[1].split("=");
+                let L = vars[cond[0].trim()] || cond[0].trim().replace(/"/g,"");
+                let R = vars[cond[1].trim()] || cond[1].trim().replace(/"/g,"");
+                if(L == R){ skip = false; ifRes = true; } else { skip = true; ifRes = false; }
+                hit = true;
             }
-            // ... (その他の if / cal / リスト / JS 連携はあなたの設計図通りに継承)
-            else if (l.includes("=")) { hit = true; } // 代入処理
-            else if (l.startsWith("{{")) { hit = true; } // 待機
+            else if (l.startsWith("else")) { skip = ifRes; hit = true; }
+            else if (l.includes("}}")) { skip = false; hit = true; }
+            // keypush (意味不明エラー回避版)
+            else if (l.startsWith("keypush")) {
+                let kMatch = l.match(/"([^"]+)"/);
+                if(kMatch){
+                    let key = kMatch[1].toUpperCase();
+                    print(`${key}キー の入力を待機します...`, "warn");
+                    window.addEventListener('keydown', (e) => {
+                        if (e.key.toUpperCase() === key) { print("キー入力成功！", "normal"); }
+                    }, { once: true });
+                }
+                hit = true;
+            }
+            // { } ブロック開始・終了 (単体でのエラー回避)
+            else if (l === "{" || l === "}") { hit = true; }
+            // icp (コピー)
+            else if (l.startsWith("icp(")) {
+                let inner = l.match(/\((.*)\)/)[1];
+                let txt = "";
+                if(inner === '"""log"""') txt = logArea.innerText;
+                else if(inner === '"""script"""') txt = editor.value;
+                else if(inner.includes('""log"""')) {
+                    let idx = inner.match(/\d+/)[0]; txt = logArea.innerText.split('\n')[idx] || "";
+                } else {
+                    let k = inner.replace(/"/g,""); txt = vars[k] !== undefined ? vars[k] : k;
+                }
+                navigator.clipboard.writeText(txt); hit = true;
+            }
+            // JSモード
+            else if (l.startsWith("++StartScript++")) {
+                let js = ""; i++;
+                while(i < lines.length && !lines[i].includes("++endscript++")) { js += lines[i] + "\n"; i++; }
+                try {
+                    let f = new Function('scope', js + "\nreturn this;");
+                    Object.assign(jsScope, f.call(window, jsScope));
+                } catch(e) { print(e.message, "error"); }
+                hit = true;
+            }
+            // 代入 / cal
+            else if (l.includes("=")) {
+                let p = l.split("="); let n = p[0].trim(); let v = p[1].trim();
+                if (v.startsWith("cal(")) {
+                    let exp = v.match(/\((.*)\)/)[1].replace(/JS,([a-z0-9]+)/gi, (m,v)=>jsScope[v]||0)
+                                 .replace(/([ぁ-んァ-ヶー一-龠a-z0-9]+)/gi, m => vars[m] !== undefined ? vars[m] : m).replace(/"/g,"");
+                    try { vars[n] = eval(exp); } catch(e) { print("計算不可", "error"); }
+                } else { vars[n] = v.replace(/"/g, ""); }
+                hit = true;
+            }
+            // 待機 / ent / リスト
+            else if (l.startsWith("{{") || l.startsWith("ent") || l.startsWith("{")) {
+                if(l.startsWith("{{")){ let s = l.match(/\d+/)[0]; await new Promise(r => setTimeout(r, parseInt(s) * 1000)); }
+                if(l.startsWith("ent")){ let r = prompt("入力"); if(l.includes(",")) vars[l.split(",")[1].trim()]=r; print(r); }
+                if(l.startsWith("{") && !l.includes("}}")){
+                   let nmMatch = l.match(/\{([^,\]\}]+)/);
+                   if(nmMatch){
+                       let nm = nmMatch[1];
+                       if(l.includes("[")) lists[nm] = JSON.parse(l.match(/\[.*\]/)[0].replace(/'/g, '"'));
+                       else if(l.includes("push=")) lists[nm].push(l.match(/"(.*)"/)[1]);
+                       else if(l.includes("De")) lists[nm] = [];
+                   }
+                }
+                hit = true;
+            }
 
-            if (!hit && !skip) await print(`エラー: 「${l}」は意味不明な言語です`, "error");
+            if (!hit && !skip) print(`エラー: 「${l}」は意味不明な言語です`, "error");
         }
     }
-
-    const helpItems = ["● disp / cav / ere : ログ出力", "● if / else / }} : 条件分岐", "● ent,変数 : 入力", "● JS,変数 : JavaScript連携", "● icp : 特殊コピー"];
-    document.getElementById('helpList').innerHTML = helpItems.map(h => `<p>${h}</p>`).join("");
 </script>
 </body>
 </html>
